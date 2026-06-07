@@ -18,7 +18,19 @@ class RedBlackTree:
     def __init__(self):
         # NIL representa as folhas nulas (sentinelas) da árvore, que são sempre pretas
         self.NIL = Node(color="BLACK")
+        self.NIL.left = self.NIL
+        self.NIL.right = self.NIL
+        self.NIL.parent = self.NIL
         self.root = self.NIL
+
+    def minimum(self, node):
+        """
+        Retorna o nó com a menor chave a partir do nó fornecido.
+        """
+        curr = node
+        while curr.left != self.NIL:
+            curr = curr.left
+        return curr
 
     def search(self, key):
         """
