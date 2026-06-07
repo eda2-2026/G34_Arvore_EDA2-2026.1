@@ -138,7 +138,46 @@ class RedBlackTree:
                     self.left_rotate(z.parent.parent)
         self.root.color = "BLACK"
 
+    def delete(self, key):
+        """
+        Deleta um nó com a chave correspondente da árvore.
+        Retorna o nó deletado se encontrado, ou None caso contrário.
+        """
+        z = self.search(key)
+        if z == self.NIL:
+            return None
 
+        y = z
+        y_original_color = y.color
+        if z.left == self.NIL:
+            x = z.right
+            self._transplant(z, z.right)
+        elif z.right == self.NIL:
+            x = z.left
+            self._transplant(z, z.left)
+        else:
+            y = self.minimum(z.right)
+            y_original_color = y.color
+            x = y.right
+            if y.parent == z:
+                x.parent = y
+            else:
+                self._transplant(y, y.right)
+                y.right = z.right
+                y.right.parent = y
+            self._transplant(z, y)
+            y.left = z.left
+            y.left.parent = y
+            y.color = z.color
+
+        if y_original_color == "BLACK":
+            self._fix_delete(x)
+
+        return z
+
+    def _fix_delete(self, x):
+        # Placeholder para o balanceamento pós-deleção (será implementado no Commit 6)
+        pass
 
     def left_rotate(self, x):
         """
