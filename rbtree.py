@@ -87,3 +87,54 @@ class RedBlackTree:
         y.right = x
         x.parent = y
 
+    def is_valid_rb_tree(self):
+        """
+        Valida se a árvore atual é uma Árvore Vermelho-Preto válida.
+        Verifica as seguintes propriedades:
+        1. A raiz é BLACK (se não for vazia).
+        2. Nenhum nó RED possui filhos RED.
+        3. Todos os caminhos de qualquer nó até as folhas NIL possuem o mesmo número de nós BLACK.
+        4. Consistência dos ponteiros parent-child.
+        """
+        if self.root == self.NIL:
+            return True
+
+        if self.root.color != "BLACK":
+            return False
+
+        def check_properties(node):
+            if node == self.NIL:
+                return True, 1  # Retorna (é_valido, altura_preta)
+
+            # Propriedade: nó vermelho não pode ter filhos vermelhos
+            if node.color == "RED":
+                if (node.left != self.NIL and node.left.color == "RED") or \
+                   (node.right != self.NIL and node.right.color == "RED"):
+                    return False, 0
+
+            # Validação dos ponteiros de parentesco
+            if node.left != self.NIL and node.left.parent != node:
+                return False, 0
+            if node.right != self.NIL and node.right.parent != node:
+                return False, 0
+
+            left_valid, left_black_height = check_properties(node.left)
+            if not left_valid:
+                return False, 0
+
+            right_valid, right_black_height = check_properties(node.right)
+            if not right_valid:
+                return False, 0
+
+            # Propriedade: caminhos para as folhas devem ter a mesma altura preta
+            if left_black_height != right_black_height:
+                return False, 0
+
+            # Calcula altura preta do nó atual
+            current_black_height = left_black_height + (1 if node.color == "BLACK" else 0)
+            return True, current_black_height
+
+        valid, _ = check_properties(self.root)
+        return valid
+
+
