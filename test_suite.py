@@ -270,8 +270,94 @@ class TestRedBlackTreeLimits(unittest.TestCase):
         self.assertEqual(node.value, 500)
 
 
+class TestRedBlackTreeMinimum(unittest.TestCase):
+    def test_minimum_on_subtree(self):
+        tree = RedBlackTree()
+        # Inserir alguns elementos manualmente para testar o mínimo
+        r = tree.insert("m", "val_m")
+        l = tree.insert("e", "val_e")
+        rg = tree.insert("t", "val_t")
+        l_l = tree.insert("b", "val_b")
+        l_r = tree.insert("g", "val_g")
+        
+        # O mínimo da árvore inteira deve ser "b"
+        self.assertEqual(tree.minimum(tree.root), l_l)
+        # O mínimo da subárvore direita a partir de "m" deve ser "t"
+        self.assertEqual(tree.minimum(rg), rg)
+        # O mínimo da subárvore esquerda a partir de "e" deve ser "b"
+        self.assertEqual(tree.minimum(l), l_l)
+
+
+class TestRedBlackTreeBasicDelete(unittest.TestCase):
+    def test_delete_non_existent(self):
+        tree = RedBlackTree()
+        self.assertIsNone(tree.delete("non_existent"))
+
+    def test_delete_single_root(self):
+        tree = RedBlackTree()
+        node = tree.insert("root_key", "val")
+        deleted = tree.delete("root_key")
+        self.assertEqual(deleted, node)
+        self.assertEqual(tree.root, tree.NIL)
+        self.assertTrue(tree.is_valid_rb_tree())
+
+    def test_delete_red_leaf(self):
+        tree = RedBlackTree()
+        r = tree.insert("m", "val_m")
+        l = tree.insert("a", "val_a") # Deve ser vermelho
+        
+        self.assertEqual(l.color, "RED")
+        deleted = tree.delete("a")
+        self.assertEqual(deleted, l)
+        self.assertEqual(tree.root, r)
+        self.assertEqual(r.left, tree.NIL)
+        self.assertTrue(tree.is_valid_rb_tree())
+
+
+class TestRedBlackTreeDeleteRebalance(unittest.TestCase):
+    def test_delete_black_leaf_trigger_rebalance(self):
+        tree = RedBlackTree()
+        tree.insert("d", 4)
+        tree.insert("b", 2)
+        tree.insert("f", 6)
+        tree.insert("a", 1)
+        tree.insert("c", 3)
+        tree.insert("e", 5)
+        tree.insert("g", 7)
+        
+        self.assertTrue(tree.is_valid_rb_tree())
+        
+        for key in ["a", "b", "c", "d", "e", "f", "g"]:
+            tree.delete(key)
+            self.assertTrue(tree.is_valid_rb_tree(), f"Failed after deleting {key}")
+
+    def test_delete_random_large(self):
+        import random
+        random.seed(100)
+        tree = RedBlackTree()
+        keys = list(range(200))
+        random.shuffle(keys)
+        
+        for key in keys:
+            tree.insert(key, f"val_{key}")
+            
+        self.assertTrue(tree.is_valid_rb_tree())
+        
+        random.shuffle(keys)
+        for key in keys:
+            deleted = tree.delete(key)
+            self.assertIsNotNone(deleted)
+            self.assertEqual(deleted.key, key)
+            self.assertTrue(tree.is_valid_rb_tree(), f"Failed after deleting {key}")
+            
+        self.assertEqual(tree.root, tree.NIL)
+
+
 if __name__ == "__main__":
     unittest.main()
+
+
+
 
 
 
