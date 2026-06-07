@@ -72,10 +72,47 @@ class RedBlackTree:
         return z
 
     def _fix_insert(self, z):
-        # Placeholder para o balanceamento (será implementado no Commit 5)
-        # Por enquanto, apenas garante que se for a raiz da árvore, ela fica preta
-        if z == self.root:
-            z.color = "BLACK"
+        """
+        Corrige as violações das propriedades da Árvore Vermelho-Preto após inserção.
+        Garante que não existam dois nós vermelhos consecutivos e que a raiz permaneça preta.
+        """
+        while z.parent.color == "RED":
+            if z.parent == z.parent.parent.left:
+                y = z.parent.parent.right  # Tio de z
+                if y.color == "RED":
+                    # Caso 1: Tio é vermelho -> Recolorir pai, tio e avô
+                    z.parent.color = "BLACK"
+                    y.color = "BLACK"
+                    z.parent.parent.color = "RED"
+                    z = z.parent.parent
+                else:
+                    # Caso 2: Tio é preto e z é filho direito
+                    if z == z.parent.right:
+                        z = z.parent
+                        self.left_rotate(z)
+                    # Caso 3: Tio é preto e z é filho esquerdo
+                    z.parent.color = "BLACK"
+                    z.parent.parent.color = "RED"
+                    self.right_rotate(z.parent.parent)
+            else:
+                y = z.parent.parent.left  # Tio de z
+                if y.color == "RED":
+                    # Caso 1 (simétrico): Tio é vermelho
+                    z.parent.color = "BLACK"
+                    y.color = "BLACK"
+                    z.parent.parent.color = "RED"
+                    z = z.parent.parent
+                else:
+                    # Caso 2 (simétrico): Tio é preto e z é filho esquerdo
+                    if z == z.parent.left:
+                        z = z.parent
+                        self.right_rotate(z)
+                    # Caso 3 (simétrico): Tio é preto e z é filho direito
+                    z.parent.color = "BLACK"
+                    z.parent.parent.color = "RED"
+                    self.left_rotate(z.parent.parent)
+        self.root.color = "BLACK"
+
 
 
     def left_rotate(self, x):
