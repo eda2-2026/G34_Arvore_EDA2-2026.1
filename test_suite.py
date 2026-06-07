@@ -230,7 +230,34 @@ class TestRedBlackTreeBasicInsert(unittest.TestCase):
         self.assertEqual(tree.root.right, tree.NIL)
 
 
+class TestRedBlackTreeInsertRebalance(unittest.TestCase):
+    def test_insert_ordered_asc(self):
+        tree = RedBlackTree()
+        keys = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"]
+        for i, key in enumerate(keys):
+            tree.insert(key, f"val_{i}")
+            self.assertTrue(tree.is_valid_rb_tree(), f"Failed after inserting {key}")
+
+    def test_insert_ordered_desc(self):
+        tree = RedBlackTree()
+        keys = ["j", "i", "h", "g", "f", "e", "d", "c", "b", "a"]
+        for i, key in enumerate(keys):
+            tree.insert(key, f"val_{i}")
+            self.assertTrue(tree.is_valid_rb_tree(), f"Failed after inserting {key}")
+
+    def test_insert_random(self):
+        import random
+        random.seed(42)
+        tree = RedBlackTree()
+        keys = list(range(100))
+        random.shuffle(keys)
+        for key in keys:
+            tree.insert(key, f"val_{key}")
+            self.assertTrue(tree.is_valid_rb_tree(), f"Failed after inserting {key}")
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
