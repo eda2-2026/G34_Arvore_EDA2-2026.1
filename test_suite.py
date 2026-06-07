@@ -256,8 +256,23 @@ class TestRedBlackTreeInsertRebalance(unittest.TestCase):
             self.assertTrue(tree.is_valid_rb_tree(), f"Failed after inserting {key}")
 
 
+class TestRedBlackTreeLimits(unittest.TestCase):
+    def test_insert_large_volume(self):
+        tree = RedBlackTree()
+        # Inserir 1000 chaves e garantir validade estrutural contínua
+        for i in range(1000):
+            tree.insert(f"key_{i}", i)
+        self.assertTrue(tree.is_valid_rb_tree())
+        
+        # Testar busca rápida em grande volume
+        node = tree.search("key_500")
+        self.assertNotEqual(node, tree.NIL)
+        self.assertEqual(node.value, 500)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 
