@@ -109,5 +109,83 @@ class TestRedBlackTreeRotations(unittest.TestCase):
         tree = RedBlackTree()
         self.assertEqual(tree.search("key"), tree.NIL)
 
+
+class TestRedBlackTreeValidation(unittest.TestCase):
+    def test_empty_tree_is_valid(self):
+        tree = RedBlackTree()
+        self.assertTrue(tree.is_valid_rb_tree())
+
+    def test_single_black_root_is_valid(self):
+        tree = RedBlackTree()
+        root = Node("root", color="BLACK")
+        root.left = tree.NIL
+        root.right = tree.NIL
+        root.parent = tree.NIL
+        tree.root = root
+        self.assertTrue(tree.is_valid_rb_tree())
+
+    def test_red_root_is_invalid(self):
+        tree = RedBlackTree()
+        root = Node("root", color="RED")
+        root.left = tree.NIL
+        root.right = tree.NIL
+        root.parent = tree.NIL
+        tree.root = root
+        self.assertFalse(tree.is_valid_rb_tree())
+
+    def test_consecutive_red_nodes_is_invalid(self):
+        tree = RedBlackTree()
+        root = Node("root", color="BLACK")
+        left = Node("left", color="RED")
+        left_left = Node("left_left", color="RED")
+
+        tree.root = root
+        root.parent = tree.NIL
+        root.right = tree.NIL
+
+        root.left = left
+        left.parent = root
+        left.right = tree.NIL
+
+        left.left = left_left
+        left_left.parent = left
+        left_left.left = tree.NIL
+        left_left.right = tree.NIL
+
+        self.assertFalse(tree.is_valid_rb_tree())
+
+    def test_different_black_heights_is_invalid(self):
+        tree = RedBlackTree()
+        root = Node("root", color="BLACK")
+        left = Node("left", color="BLACK")
+
+        tree.root = root
+        root.parent = tree.NIL
+        root.right = tree.NIL
+
+        root.left = left
+        left.parent = root
+        left.left = tree.NIL
+        left.right = tree.NIL
+
+        self.assertFalse(tree.is_valid_rb_tree())
+
+    def test_invalid_parent_pointer_is_invalid(self):
+        tree = RedBlackTree()
+        root = Node("root", color="BLACK")
+        left = Node("left", color="RED")
+
+        tree.root = root
+        root.parent = tree.NIL
+        root.right = tree.NIL
+        root.left = left
+        left.parent = tree.NIL  # Deveria ser root
+        left.left = tree.NIL
+        left.right = tree.NIL
+
+        self.assertFalse(tree.is_valid_rb_tree())
+
+
 if __name__ == "__main__":
     unittest.main()
+
