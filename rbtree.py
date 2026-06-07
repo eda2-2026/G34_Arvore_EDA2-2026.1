@@ -35,6 +35,49 @@ class RedBlackTree:
                 curr = curr.right
         return self.NIL
 
+    def insert(self, key, value, expires_at=None):
+        """
+        Insere uma chave e valor na árvore. Se a chave já existir,
+        atualiza o valor e o expires_at (comportamento upsert).
+        Sempre inicia novos nós como RED e executa o rebalanceamento.
+        """
+        existing = self.search(key)
+        if existing != self.NIL:
+            existing.value = value
+            existing.expires_at = expires_at
+            return existing
+
+        z = Node(key, value, expires_at, color="RED")
+        z.left = self.NIL
+        z.right = self.NIL
+
+        y = self.NIL
+        x = self.root
+        while x != self.NIL:
+            y = x
+            if z.key < x.key:
+                x = x.left
+            else:
+                x = x.right
+
+        z.parent = y
+        if y == self.NIL:
+            self.root = z
+        elif z.key < y.key:
+            y.left = z
+        else:
+            y.right = z
+
+        self._fix_insert(z)
+        return z
+
+    def _fix_insert(self, z):
+        # Placeholder para o balanceamento (será implementado no Commit 5)
+        # Por enquanto, apenas garante que se for a raiz da árvore, ela fica preta
+        if z == self.root:
+            z.color = "BLACK"
+
+
     def left_rotate(self, x):
         """
         Rotaciona à esquerda sobre o nó x.
