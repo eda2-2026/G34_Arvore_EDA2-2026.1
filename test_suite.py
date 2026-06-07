@@ -314,8 +314,48 @@ class TestRedBlackTreeBasicDelete(unittest.TestCase):
         self.assertTrue(tree.is_valid_rb_tree())
 
 
+class TestRedBlackTreeDeleteRebalance(unittest.TestCase):
+    def test_delete_black_leaf_trigger_rebalance(self):
+        tree = RedBlackTree()
+        tree.insert("d", 4)
+        tree.insert("b", 2)
+        tree.insert("f", 6)
+        tree.insert("a", 1)
+        tree.insert("c", 3)
+        tree.insert("e", 5)
+        tree.insert("g", 7)
+        
+        self.assertTrue(tree.is_valid_rb_tree())
+        
+        for key in ["a", "b", "c", "d", "e", "f", "g"]:
+            tree.delete(key)
+            self.assertTrue(tree.is_valid_rb_tree(), f"Failed after deleting {key}")
+
+    def test_delete_random_large(self):
+        import random
+        random.seed(100)
+        tree = RedBlackTree()
+        keys = list(range(200))
+        random.shuffle(keys)
+        
+        for key in keys:
+            tree.insert(key, f"val_{key}")
+            
+        self.assertTrue(tree.is_valid_rb_tree())
+        
+        random.shuffle(keys)
+        for key in keys:
+            deleted = tree.delete(key)
+            self.assertIsNotNone(deleted)
+            self.assertEqual(deleted.key, key)
+            self.assertTrue(tree.is_valid_rb_tree(), f"Failed after deleting {key}")
+            
+        self.assertEqual(tree.root, tree.NIL)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 
