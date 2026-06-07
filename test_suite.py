@@ -270,8 +270,27 @@ class TestRedBlackTreeLimits(unittest.TestCase):
         self.assertEqual(node.value, 500)
 
 
+class TestRedBlackTreeMinimum(unittest.TestCase):
+    def test_minimum_on_subtree(self):
+        tree = RedBlackTree()
+        # Inserir alguns elementos manualmente para testar o mínimo
+        r = tree.insert("m", "val_m")
+        l = tree.insert("e", "val_e")
+        rg = tree.insert("t", "val_t")
+        l_l = tree.insert("b", "val_b")
+        l_r = tree.insert("g", "val_g")
+        
+        # O mínimo da árvore inteira deve ser "b"
+        self.assertEqual(tree.minimum(tree.root), l_l)
+        # O mínimo da subárvore direita a partir de "m" deve ser "t"
+        self.assertEqual(tree.minimum(rg), rg)
+        # O mínimo da subárvore esquerda a partir de "e" deve ser "b"
+        self.assertEqual(tree.minimum(l), l_l)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 
