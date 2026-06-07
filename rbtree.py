@@ -32,6 +32,19 @@ class RedBlackTree:
             curr = curr.left
         return curr
 
+    def _transplant(self, u, v):
+        """
+        Substitui a subárvore enraizada no nó u pela subárvore enraizada no nó v.
+        """
+        if u.parent == self.NIL or u.parent is None:
+            self.root = v
+        elif u == u.parent.left:
+            u.parent.left = v
+        else:
+            u.parent.right = v
+        
+        v.parent = u.parent
+
     def search(self, key):
         """
         Busca uma chave na árvore lexicograficamente.
