@@ -288,8 +288,35 @@ class TestRedBlackTreeMinimum(unittest.TestCase):
         self.assertEqual(tree.minimum(l), l_l)
 
 
+class TestRedBlackTreeBasicDelete(unittest.TestCase):
+    def test_delete_non_existent(self):
+        tree = RedBlackTree()
+        self.assertIsNone(tree.delete("non_existent"))
+
+    def test_delete_single_root(self):
+        tree = RedBlackTree()
+        node = tree.insert("root_key", "val")
+        deleted = tree.delete("root_key")
+        self.assertEqual(deleted, node)
+        self.assertEqual(tree.root, tree.NIL)
+        self.assertTrue(tree.is_valid_rb_tree())
+
+    def test_delete_red_leaf(self):
+        tree = RedBlackTree()
+        r = tree.insert("m", "val_m")
+        l = tree.insert("a", "val_a") # Deve ser vermelho
+        
+        self.assertEqual(l.color, "RED")
+        deleted = tree.delete("a")
+        self.assertEqual(deleted, l)
+        self.assertEqual(tree.root, r)
+        self.assertEqual(r.left, tree.NIL)
+        self.assertTrue(tree.is_valid_rb_tree())
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
 
 
