@@ -186,6 +186,51 @@ class TestRedBlackTreeValidation(unittest.TestCase):
         self.assertFalse(tree.is_valid_rb_tree())
 
 
+class TestRedBlackTreeBasicInsert(unittest.TestCase):
+    def test_insert_single_node(self):
+        tree = RedBlackTree()
+        node = tree.insert("key1", "val1", 1000)
+        self.assertEqual(tree.root, node)
+        self.assertEqual(node.key, "key1")
+        self.assertEqual(node.value, "val1")
+        self.assertEqual(node.expires_at, 1000)
+        self.assertEqual(node.color, "BLACK")
+        self.assertEqual(node.left, tree.NIL)
+        self.assertEqual(node.right, tree.NIL)
+        self.assertEqual(node.parent, tree.NIL)
+
+    def test_insert_multiple_bst_structure(self):
+        tree = RedBlackTree()
+        # Sem balanceamento real por enquanto (apenas BST clássica)
+        r = tree.insert("m", "root_val")
+        l = tree.insert("a", "left_val")
+        rg = tree.insert("z", "right_val")
+        
+        self.assertEqual(tree.root, r)
+        self.assertEqual(r.left, l)
+        self.assertEqual(r.right, rg)
+        self.assertEqual(l.parent, r)
+        self.assertEqual(rg.parent, r)
+        self.assertEqual(l.left, tree.NIL)
+        self.assertEqual(rg.right, tree.NIL)
+
+    def test_upsert_existing_key(self):
+        tree = RedBlackTree()
+        node1 = tree.insert("key1", "val1", 1000)
+        node2 = tree.insert("key1", "val2", 2000)
+        
+        # O nó retornado deve ser o mesmo
+        self.assertEqual(node1, node2)
+        # O valor e o TTL devem ter sido atualizados
+        self.assertEqual(node1.value, "val2")
+        self.assertEqual(node1.expires_at, 2000)
+        # A árvore deve conter apenas um nó
+        self.assertEqual(tree.root, node1)
+        self.assertEqual(tree.root.left, tree.NIL)
+        self.assertEqual(tree.root.right, tree.NIL)
+
+
 if __name__ == "__main__":
     unittest.main()
+
 
