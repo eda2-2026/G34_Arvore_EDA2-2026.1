@@ -176,8 +176,63 @@ class RedBlackTree:
         return z
 
     def _fix_delete(self, x):
-        # Placeholder para o balanceamento pós-deleção (será implementado no Commit 6)
-        pass
+        """
+        Corrige as violações das propriedades da Árvore Vermelho-Preto após deleção.
+        Trata os 4 casos clássicos de violação de cor/altura preta e suas versões simétricas.
+        """
+        while x != self.root and x.color == "BLACK":
+            if x == x.parent.left:
+                w = x.parent.right  # irmão de x
+                if w.color == "RED":
+                    # Caso 1: irmão é vermelho
+                    w.color = "BLACK"
+                    x.parent.color = "RED"
+                    self.left_rotate(x.parent)
+                    w = x.parent.right
+                if w.left.color == "BLACK" and w.right.color == "BLACK":
+                    # Caso 2: filhos do irmão são pretos
+                    w.color = "RED"
+                    x = x.parent
+                else:
+                    # Caso 3: filho esquerdo do irmão é vermelho, direito é preto
+                    if w.right.color == "BLACK":
+                        w.left.color = "BLACK"
+                        w.color = "RED"
+                        self.right_rotate(w)
+                        w = x.parent.right
+                    # Caso 4: filho direito do irmão é vermelho
+                    w.color = x.parent.color
+                    x.parent.color = "BLACK"
+                    w.right.color = "BLACK"
+                    self.left_rotate(x.parent)
+                    x = self.root
+            else:
+                w = x.parent.left  # irmão de x (simétrico)
+                if w.color == "RED":
+                    # Caso 1 (simétrico): irmão é vermelho
+                    w.color = "BLACK"
+                    x.parent.color = "RED"
+                    self.right_rotate(x.parent)
+                    w = x.parent.left
+                if w.left.color == "BLACK" and w.right.color == "BLACK":
+                    # Caso 2 (simétrico): filhos do irmão são pretos
+                    w.color = "RED"
+                    x = x.parent
+                else:
+                    # Caso 3 (simétrico): filho direito do irmão é vermelho, esquerdo é preto
+                    if w.left.color == "BLACK":
+                        w.right.color = "BLACK"
+                        w.color = "RED"
+                        self.left_rotate(w)
+                        w = x.parent.left
+                    # Caso 4 (simétrico): filho esquerdo do irmão é vermelho
+                    w.color = x.parent.color
+                    x.parent.color = "BLACK"
+                    w.left.color = "BLACK"
+                    self.right_rotate(x.parent)
+                    x = self.root
+        x.color = "BLACK"
+
 
     def left_rotate(self, x):
         """
