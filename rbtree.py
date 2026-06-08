@@ -23,6 +23,19 @@ class RedBlackTree:
         self.NIL.parent = self.NIL
         self.root = self.NIL
 
+    def inorder(self, node=None):
+        """
+        In-order generator that yields nodes in ascending key order.
+        Properly handles the NIL sentinel by checking node != self.NIL.
+        Yields only real (non-NIL) nodes.
+        """
+        if node is None:
+            node = self.root
+        if node != self.NIL:
+            yield from self.inorder(node.left)
+            yield node
+            yield from self.inorder(node.right)
+
     def minimum(self, node):
         """
         Retorna o nó com a menor chave a partir do nó fornecido.
