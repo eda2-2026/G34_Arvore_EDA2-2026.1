@@ -1,6 +1,10 @@
 # test_suite.py
+import io
 import unittest
+from unittest.mock import patch
 from rbtree import RedBlackTree, Node
+from cache import TTLCache
+import cli
 
 class TestRedBlackTreeRotations(unittest.TestCase):
     def test_left_rotate(self):
@@ -351,6 +355,234 @@ class TestRedBlackTreeDeleteRebalance(unittest.TestCase):
             self.assertTrue(tree.is_valid_rb_tree(), f"Failed after deleting {key}")
             
         self.assertEqual(tree.root, tree.NIL)
+
+
+class TestTTLCacheBasic(unittest.TestCase):
+    """Task 6: Basic set/get/delete operations on TTLCache."""
+
+    def setUp(self):
+        self.cache = TTLCache()
+
+    def test_set_and_get(self):
+        self.cache.set("name", "Alice", 5000)
+        self.assertEqual(self.cache.get("name"), "Alice")
+
+    def test_get_non_existent(self):
+        self.assertIsNone(self.cache.get("ghost"))
+
+    def test_upsert_existing_key(self):
+        node1 = self.cache.set("key", "old", 5000)
+        node2 = self.cache.set("key", "new", 9999)
+        # Same underlying node
+        self.assertIs(node1, node2)
+        self.assertEqual(node1.value, "new")
+        self.assertEqual(node1.expires_at, node2.expires_at)
+        self.assertEqual(self.cache.get("key"), "new")
+
+    def test_delete_existing(self):
+        self.cache.set("x", 10, 5000)
+        self.assertTrue(self.cache.delete("x"))
+        self.assertIsNone(self.cache.get("x"))
+
+    def test_delete_non_existent(self):
+        self.assertFalse(self.cache.delete("nope"))
+
+
+class TestTTLCacheExpiration(unittest.TestCase):
+    """Task 7: TTL expiration and lazy deletion."""
+
+    def setUp(self):
+        self.cache = TTLCache()
+        self._fake_now = 1000000
+
+    def _patch_now(self):
+        """Monkey-patch _now_ms to return controllable fake time."""
+        cache = self.cache
+
+        def fake_now_ms():
+            return self._fake_now
+
+        return patch.object(cache, "_now_ms", fake_now_ms)
+
+    def test_lazy_expiration(self):
+        with self._patch_now():
+            self.cache.set("ephemeral", "data", ttl_ms=100)
+            # Before expiry
+            self.assertEqual(self.cache.get("ephemeral"), "data")
+            # Advance time past ttl
+            self._fake_now += 200
+            # Now it should be expired and deleted lazily
+            self.assertIsNone(self.cache.get("ephemeral"))
+            # Node should be gone from tree
+            self.assertIsNone(self.cache.get("ephemeral"))
+
+    def test_expired_ttl_miss_count(self):
+        with self._patch_now():
+            self.cache.set("a", 1, ttl_ms=50)
+            self.cache.set("b", 2, ttl_ms=500)
+            self._fake_now += 200  # a expired, b still valid
+            self.assertIsNone(self.cache.get("a"))   # ttl_miss
+            self.assertEqual(self.cache.get("b"), 2)  # valid
+            self.assertEqual(self.cache._ttl_misses, 1)
+
+    def test_no_expiration(self):
+        """Entries with ttl_ms=None never expire."""
+        with self._patch_now():
+            self.cache.set("permanent", "forever", ttl_ms=None)
+            self._fake_now += 999999
+            self.assertEqual(self.cache.get("permanent"), "forever")
+
+
+class TestTTLCachePurge(unittest.TestCase):
+    """Task 8: Bulk purge of expired entries via in-order traversal."""
+
+    def setUp(self):
+        self.cache = TTLCache()
+        self._fake_now = 1000000
+
+    def _patch_now(self):
+        cache = self.cache
+
+        def fake_now_ms():
+            return self._fake_now
+
+        return patch.object(cache, "_now_ms", fake_now_ms)
+
+    def test_purge_removes_expired(self):
+        with self._patch_now():
+            self.cache.set("a", 1, ttl_ms=100)
+            self.cache.set("b", 2, ttl_ms=1000)
+            self.cache.set("c", 3, ttl_ms=100)
+            # Advance time so a and c expire, b stays
+            self._fake_now += 500
+            removed = self.cache.purge()
+            self.assertEqual(removed, 2)
+            # a and c should be gone
+            self.assertIsNone(self.cache.get("a"))
+            self.assertIsNone(self.cache.get("c"))
+            # b should still be present
+            self.assertEqual(self.cache.get("b"), 2)
+
+    def test_purge_returns_count(self):
+        with self._patch_now():
+            self.cache.set("x", 1, ttl_ms=10)
+            self.cache.set("y", 2, ttl_ms=10)
+            self._fake_now += 50
+            removed = self.cache.purge()
+            self.assertEqual(removed, 2)
+
+    def test_purge_empty_cache(self):
+        with self._patch_now():
+            removed = self.cache.purge()
+            self.assertEqual(removed, 0)
+
+
+class TestTTLCacheStats(unittest.TestCase):
+    """Task 9: Statistics tracking."""
+
+    def setUp(self):
+        self.cache = TTLCache()
+        self._fake_now = 1000000
+
+    def _patch_now(self):
+        cache = self.cache
+
+        def fake_now_ms():
+            return self._fake_now
+
+        return patch.object(cache, "_now_ms", fake_now_ms)
+
+    def test_stats_counts(self):
+        with self._patch_now():
+            # Perform operations
+            self.cache.set("k1", "v1", ttl_ms=200)
+            self.cache.set("k2", "v2", ttl_ms=200)
+            self.cache.get("k1")   # valid get
+            self.cache.get("k3")   # non-existent
+            self._fake_now += 300  # both expire
+            self.cache.get("k1")   # ttl miss (lazy)
+            self.cache.delete("k2")  # delete existing
+
+            stats = self.cache.get_stats()
+            # Ops: 2 sets + 3 gets + 1 delete + 1 get_stats = 7
+            self.assertEqual(stats["total_ops"], 7)
+            self.assertEqual(stats["ttl_misses"], 1)
+            # k1 expired and lazily deleted, k2 manually deleted → 0 live
+            self.assertEqual(stats["live_entries"], 0)
+
+
+class TestCLI(unittest.TestCase):
+    """Task 10: Interactive CLI command processing."""
+
+    def setUp(self):
+        self.cache = TTLCache()
+        self._fake_now = 1000000
+
+    def _run_cli(self, commands):
+        """Simulate CLI input and capture output."""
+        input_str = "\n".join(commands)
+        with patch("sys.stdin", io.StringIO(input_str)):
+            with patch("sys.stdout", new_callable=io.StringIO) as fake_out:
+                with patch("cli.TTLCache", return_value=self.cache):
+                    cli.main()
+                return fake_out.getvalue()
+
+    def test_set_and_get(self):
+        output = self._run_cli([
+            "SET name Alice 5000",
+            "GET name",
+            "EXIT",
+        ])
+        lines = output.strip().split("\n")
+        self.assertEqual(lines[0], "OK")
+        self.assertEqual(lines[1], "Alice")
+
+    def test_delete(self):
+        output = self._run_cli([
+            "SET temp data 10000",
+            "DELETE temp",
+            "DELETE temp",
+            "EXIT",
+        ])
+        lines = output.strip().split("\n")
+        self.assertEqual(lines[0], "OK")
+        self.assertEqual(lines[1], "OK")
+        self.assertEqual(lines[2], "MISS")
+
+    def test_purge_and_stats(self):
+        output = self._run_cli([
+            "SET a 1 100",
+            "PURGE",
+            "STATS",
+            "EXIT",
+        ])
+        lines = output.strip().split("\n")
+        # SET → OK
+        self.assertEqual(lines[0], "OK")
+        # PURGE returns 0 (not expired yet in real time)
+        self.assertIn("Removed 0 expired entries", lines[1])
+        # STATS should show live_entries, ttl_misses, total_ops
+        self.assertIn("Live entries:", lines[2])
+        self.assertIn("TTL misses:", lines[3])
+        self.assertIn("Total ops:", lines[4])
+
+    def test_unknown_command(self):
+        output = self._run_cli([
+            "FOOBAR",
+            "EXIT",
+        ])
+        self.assertIn("Unknown command: FOOBAR", output)
+
+    def test_missing_args(self):
+        output = self._run_cli([
+            "SET onlytwo",
+            "GET",
+            "DELETE",
+            "EXIT",
+        ])
+        self.assertIn("Usage: SET <key> <value> <ttl_ms>", output)
+        self.assertIn("Usage: GET <key>", output)
+        self.assertIn("Usage: DELETE <key>", output)
 
 
 if __name__ == "__main__":
